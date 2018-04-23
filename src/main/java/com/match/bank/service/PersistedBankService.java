@@ -15,21 +15,12 @@ import com.match.bank.exception.UserNotFoundException;
 public class PersistedBankService implements BankService {
 
     static Logger log = Logger.getLogger(PersistedBankService.class);
-    private static PersistedBankService instance;
     private Data data;
 
-    private PersistedBankService() {
+    public PersistedBankService() {
     }
 
-    public static synchronized PersistedBankService getInstance() {
-        if (instance == null) {
-            instance = new PersistedBankService();
-            instance.setData(new Data());
-        }
-        return instance;
-    }
-
-    private void setData(Data data) {
+    public void setData(Data data) {
         this.data = data;
 
     }
@@ -39,9 +30,14 @@ public class PersistedBankService implements BankService {
      */
     @Override
     public Account deposit(Integer accountId, Integer amount) throws DataLayerException, AccountNotFoundException {
+        if (amount <= 0)
+            throw new IllegalArgumentException("Deposit amount must be > 0: " + amount);
         log.info("Depositing " + amount + " into account: " + accountId);
         Account account = data.getAccountByAccountId(accountId);
-        return account = data.deposit(account, new BigDecimal(amount));
+        account.setBalance(account.getBalance().add(new BigDecimal(amount)));
+        data.persistBalance(account);
+        log.debug("Deposit of " + amount + " succesful || " + account);
+        return account;
     }
 
     /**
@@ -50,9 +46,20 @@ public class PersistedBankService implements BankService {
     @Override
     public Account withdraw(Integer accountId, Integer amount)
             throws InsufficientFundsException, DataLayerException, AccountNotFoundException {
+        if (amount < 0) {
+            throw new IllegalArgumentException("Withdrawal amount can't be negative" + amount);
+        }
         log.info("Making withdrawal of " + amount + " from account: " + accountId);
         Account account = data.getAccountByAccountId(accountId);
-        return account = data.withdraw(account, amount);
+        if (account.getBalance().intValue() < amount) {
+            log.error("Insufficient funds, Balance: " + account.getBalance() + " < " + amount);
+            throw new InsufficientFundsException("Insufficient funds in account......");
+        }
+        BigDecimal newBalance = account.getBalance().subtract(new BigDecimal(amount));
+        account.setBalance(newBalance);
+        data.persistBalance(account);
+        log.debug("Withdrawal of " + amount + " succesful || " + account);
+        return account;
     }
 
     /**
@@ -82,6 +89,9 @@ public class PersistedBankService implements BankService {
      */
     @Override
     public Account openAccount(Integer userId, Integer initialBalance) throws DataLayerException {
+        if (initialBalance < 0) {
+            throw new IllegalArgumentException("Balance can't be negative: " + initialBalance);
+        }
         log.info("Opening account for user: " + userId + " with balance: " + initialBalance);
         return data.openAccount(userId, initialBalance);
     }

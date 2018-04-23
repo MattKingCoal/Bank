@@ -18,7 +18,6 @@ import com.match.bank.account.Account;
 import com.match.bank.account.AccountType;
 import com.match.bank.exception.AccountNotFoundException;
 import com.match.bank.exception.DataLayerException;
-import com.match.bank.exception.InsufficientFundsException;
 
 public class Data {
 
@@ -86,21 +85,7 @@ public class Data {
         return accounts;
     }
 
-    public Account deposit(Account account, BigDecimal amount) throws DataLayerException {
-        account.deposit(amount);
-        persistBalance(account);
-        log.debug("Deposit of " + amount + " succesful || " + account);
-        return account;
-    }
-
-    public Account withdraw(Account account, Integer amount) throws InsufficientFundsException, DataLayerException {
-        account.withdraw(amount);
-        persistBalance(account);
-        log.debug("Withdrawal of " + amount + " succesful || " + account);
-        return account;
-    }
-
-    private void persistBalance(Account account) throws DataLayerException {
+    public void persistBalance(Account account) throws DataLayerException {
         PreparedStatement pstatement = null;
         try {
             pstatement = conn.prepareStatement(SQLQueries.UPDATEBALANCEBYACCOUNTID);

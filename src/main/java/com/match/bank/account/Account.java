@@ -3,24 +3,26 @@ package com.match.bank.account;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-import com.match.bank.exception.InsufficientFundsException;
-
 public class Account implements Comparable<Account>, Serializable {
 
     /**
      * 
      */
-    private static final long serialVersionUID = -4988890835158727342L;
+    private static final long serialVersionUID = 8780206051169526183L;
+
     private final Integer accountID;
     private final Integer UserId;
     private final AccountType type;
     private BigDecimal balance = new BigDecimal(0);
 
     public Account(Integer accountID, Integer userID, BigDecimal initialbalance, AccountType type) {
+        if (initialbalance.intValue() < 0) {
+            throw new IllegalArgumentException();
+        }
         this.accountID = accountID;
         this.UserId = userID;
         this.type = type;
-        deposit(initialbalance);
+        this.balance = initialbalance;
     }
 
     public Integer getUserId() {
@@ -31,28 +33,12 @@ public class Account implements Comparable<Account>, Serializable {
         return balance;
     }
 
+    public void setBalance(BigDecimal balance) {
+        this.balance = balance;
+    }
+
     public Integer getAccountID() {
         return accountID;
-    }
-
-    public BigDecimal withdraw(Integer value) throws InsufficientFundsException {
-        if (value == null)
-            throw new NullPointerException();
-        if (value < 0)
-            throw new IllegalArgumentException("seriously, stop that, value can't be negative: " + value);
-        if (value > balance.intValue())
-            throw new InsufficientFundsException("Insufficient funds......");
-        balance = balance.subtract(new BigDecimal(value));
-        return balance;
-    }
-
-    public BigDecimal deposit(BigDecimal initialbalance) {
-        if (initialbalance == null)
-            throw new NullPointerException();
-        if (initialbalance.intValue() < 0)
-            throw new IllegalArgumentException("seriously, stop that, value can't be negative: " + initialbalance);
-        balance = balance.add(initialbalance);
-        return balance;
     }
 
     public String toAccountXML() {
